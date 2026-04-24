@@ -3,50 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ELDoctor Pay - الـدكتور باي</title>
+    <title>ELDoctor Pay - بوابة الويب</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-        .container {
-            padding: 20px;
-            border: 1px solid #333;
-            border-radius: 15px;
-            background: #1e1e1e;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        h1 { color: #FF5722; font-size: 2.5rem; }
-        p { color: #bbb; font-size: 1.2rem; }
-        .status {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border-radius: 20px;
-            margin-top: 20px;
-        }
-        .footer { margin-top: 50px; font-size: 0.8rem; color: #666; }
+        :root { --primary: #FF5722; --dark: #121212; --card: #1e1e1e; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--dark); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .navbar { width: 100%; padding: 20px; background: var(--card); text-align: center; border-bottom: 2px solid var(--primary); }
+        .container { max-width: 500px; width: 90%; margin-top: 50px; background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: var(--primary); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #252525; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { opacity: 0.8; }
+        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 15px; background: #4CAF50; font-size: 0.8rem; margin-top: 10px; }
+        .apk-download { margin-top: 20px; color: #bbb; text-decoration: none; display: block; font-size: 0.9rem; }
+        #dashboard { display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="logo/logo.png" alt="ELDoctor Pay" style="width: 150px;">
-        <h1>الـدكتور باي - ELDoctor Pay</h1>
-        <p>نظام الدفع الإلكتروني المتكامل</p>
-        <div class="status">النظام متصل بالسحاب 🌐</div>
-        <p style="margin-top: 30px;">تطبيـق الأندرويد مرتبط بنجاح مع Supabase</p>
+    <div class="navbar">
+        <img src="logo/logo.png" alt="Logo" style="width: 80px;">
+        <div style="font-weight: bold; margin-top: 10px;">الـدكتور باي - النسخة السحابية</div>
     </div>
-    <div class="footer">
-        © 2025 ELDoctor Pay Developer - تم النشر عبر Vercel
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="login-form" class="container">
+        <h1>تسجيل الدخول</h1>
+        <p>ادخل رقم الهاتف المسجل في التطبيق</p>
+        <input type="text" id="phone" placeholder="رقم الهاتف (بدون 0)">
+        <input type="password" id="password" placeholder="كلمة المرور">
+        <button onclick="login()">دخول للنظام</button>
+        <div id="error" style="color: red; margin-top: 10px; font-size: 0.8rem;"></div>
+        <a href="#" class="apk-download">📥 تحميل تطبيق الأندرويد (APK)</a>
     </div>
+
+    <!-- لوحة التحكم المصغرة للويب -->
+    <div id="dashboard" class="container">
+        <h1 id="user-name">مرحباً</h1>
+        <div class="status-badge">حساب نشط ✅</div>
+        <div style="margin: 20px 0; background: #252525; padding: 20px; border-radius: 10px;">
+            <div style="font-size: 0.9rem; color: #aaa;">الرصيد الحالي</div>
+            <div id="balance" style="font-size: 2.5rem; font-weight: bold; color: var(--primary);">0.00 EGP</div>
+        </div>
+        <button onclick="logout()" style="background: #333;">تسجيل الخروج</button>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://wwkllpornhzwovsvyikv.supabase.co';
+        const supabaseKey = 'sb_publishable_QcDiCoyD921ZNJ-pBd_KKw_LgQzeIpU';
+        const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+
+        async function login() {
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const email = `u${phone}@drpay.app`;
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                document.getElementById('error').innerText = "خطأ في بيانات الدخول";
+            } else {
+                showDashboard(data.user);
+            }
+        }
+
+        async function showDashboard(user) {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (profile) {
+                document.getElementById('user-name').innerText = `مرحباً، ${profile.full_name}`;
+                document.getElementById('balance').innerText = `${profile.balance} EGP`;
+            }
+        }
+
+        function logout() {
+            supabase.auth.signOut();
+            location.reload();
+        }
+    </script>
 </body>
 </html>

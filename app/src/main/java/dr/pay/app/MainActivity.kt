@@ -96,78 +96,84 @@ fun MainScreen() {
         )
     }
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = "login",
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable("login") { 
-                BackHandler { showExitDialog = true }
-                LoginScreen(
-                    onLoginSuccess = { 
-                        navController.navigate("dashboard") {
-                            popUpTo("login") { inclusive = true }
+    var showSplash by remember { mutableStateOf(true) }
+
+    if (showSplash) {
+        SplashScreen(onSplashFinished = { showSplash = false })
+    } else {
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = "login",
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable("login") { 
+                    BackHandler { showExitDialog = true }
+                    LoginScreen(
+                        onLoginSuccess = { 
+                            navController.navigate("dashboard") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        },
+                        onRegisterClick = { navController.navigate("register") }
+                    )
+                }
+                composable("register") {
+                    RegisterScreen(
+                        onRegisterSuccess = { 
+                            navController.navigate("login") {
+                                popUpTo("register") { inclusive = true }
+                            }
+                        },
+                        onBackToLogin = { navController.popBackStack() }
+                    )
+                }
+                composable("dashboard") {
+                    BackHandler { showExitDialog = true }
+                    UserDashboard(
+                        onNavigateToService = { category -> navController.navigate("services/$category") },
+                        onNavigateToDeposit = { navController.navigate("deposit") },
+                        onNavigateToHistory = { navController.navigate("history") },
+                        onNavigateToSupport = { navController.navigate("support") },
+                        onNavigateToMerchantTree = { navController.navigate("merchant_tree") },
+                        onNavigateToAdmin = { navController.navigate("admin") },
+                        onLogout = { 
+                            navController.navigate("login") {
+                                popUpTo("dashboard") { inclusive = true }
+                            }
                         }
-                    },
-                    onRegisterClick = { navController.navigate("register") }
-                )
-            }
-            composable("register") {
-                RegisterScreen(
-                    onRegisterSuccess = { 
-                        navController.navigate("login") {
-                            popUpTo("register") { inclusive = true }
-                        }
-                    },
-                    onBackToLogin = { navController.popBackStack() }
-                )
-            }
-            composable("dashboard") {
-                BackHandler { showExitDialog = true }
-                UserDashboard(
-                    onNavigateToService = { category -> navController.navigate("services/$category") },
-                    onNavigateToDeposit = { navController.navigate("deposit") },
-                    onNavigateToHistory = { navController.navigate("history") },
-                    onNavigateToSupport = { navController.navigate("support") },
-                    onNavigateToMerchantTree = { navController.navigate("merchant_tree") },
-                    onNavigateToAdmin = { navController.navigate("admin") },
-                    onLogout = { 
-                        navController.navigate("login") {
-                            popUpTo("dashboard") { inclusive = true }
-                        }
-                    }
-                )
-            }
-            composable("services/{category}") { backStackEntry ->
-                val category = backStackEntry.arguments?.getString("category") ?: ""
-                ServiceListScreen(
-                    category = category,
-                    onServiceClick = { serviceId -> navController.navigate("service_form/$serviceId") },
-                    onBack = { navController.popBackStack() }
-                )
-            }
-            composable("service_form/{serviceId}") { backStackEntry ->
-                val serviceId = backStackEntry.arguments?.getString("serviceId") ?: ""
-                ServiceFormScreen(
-                    serviceId = serviceId,
-                    onBack = { navController.popBackStack() }
-                )
-            }
-            composable("deposit") {
-                DepositScreen(onBack = { navController.popBackStack() })
-            }
-            composable("history") {
-                HistoryScreen(onBack = { navController.popBackStack() })
-            }
-            composable("support") {
-                SupportScreen(onBack = { navController.popBackStack() })
-            }
-            composable("merchant_tree") {
-                MerchantTreeScreen(onBack = { navController.popBackStack() })
-            }
-            composable("admin") {
-                AdminDashboard(onBack = { navController.popBackStack() })
+                    )
+                }
+                composable("services/{category}") { backStackEntry ->
+                    val category = backStackEntry.arguments?.getString("category") ?: ""
+                    ServiceListScreen(
+                        category = category,
+                        onServiceClick = { serviceId -> navController.navigate("service_form/$serviceId") },
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("service_form/{serviceId}") { backStackEntry ->
+                    val serviceId = backStackEntry.arguments?.getString("serviceId") ?: ""
+                    ServiceFormScreen(
+                        serviceId = serviceId,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("deposit") {
+                    DepositScreen(onBack = { navController.popBackStack() })
+                }
+                composable("history") {
+                    HistoryScreen(onBack = { navController.popBackStack() })
+                }
+                composable("support") {
+                    SupportScreen(onBack = { navController.popBackStack() })
+                }
+                composable("merchant_tree") {
+                    MerchantTreeScreen(onBack = { navController.popBackStack() })
+                }
+                composable("admin") {
+                    AdminDashboard(onBack = { navController.popBackStack() })
+                }
             }
         }
     }

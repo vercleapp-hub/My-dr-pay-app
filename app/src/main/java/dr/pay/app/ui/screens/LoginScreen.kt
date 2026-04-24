@@ -15,6 +15,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dr.pay.app.ui.viewmodel.AuthViewModel
 import dr.pay.app.ui.viewmodel.AuthState
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
@@ -24,6 +31,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val authState by viewModel.authState.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Authenticated) {
@@ -40,7 +48,7 @@ fun LoginScreen(
     ) {
         // Logo
         Image(
-            painter = painterResource(id = R.drawable.logo), // تم استخدام اللوجو الخاص بك الآن
+            painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo",
             modifier = Modifier.size(200.dp)
         )
@@ -60,7 +68,14 @@ fun LoginScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("رقم الهاتف") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Phone,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -70,7 +85,16 @@ fun LoginScreen(
             onValueChange = { password = it },
             label = { Text("كلمة المرور") },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { 
+                    focusManager.clearFocus()
+                    viewModel.signIn(email, password)
+                }
+            )
         )
 
         if (authState is AuthState.Error) {

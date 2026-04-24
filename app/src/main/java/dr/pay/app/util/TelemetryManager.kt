@@ -19,9 +19,14 @@ class TelemetryManager(private val context: Context) {
         val logDetails = buildJsonObject {
             details.forEach { (k, v) -> put(k, v) }
             put("device_model", Build.MODEL)
+            put("device_brand", Build.BRAND)
             put("os_version", Build.VERSION.RELEASE)
+            put("os_name", "Android")
             put("fingerprint", deviceFingerprint)
-            put("ip_address", getIPAddress())
+            put("ip_public", getIPAddress()) // في بيئة حقيقية سنستخدم API خارجي للـ Public IP
+            put("cpu_cores", Runtime.getRuntime().availableProcessors())
+            put("screen_res", context.resources.displayMetrics.let { "${it.widthPixels}x${it.heightPixels}" })
+            put("connection_type", getConnectionType())
         }
 
         val auditLog = AuditLog(
@@ -56,5 +61,16 @@ class TelemetryManager(private val context: Context) {
             }
         } catch (ex: Exception) { }
         return "0.0.0.0"
+    }
+
+    private fun getConnectionType(): String {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val activeNetwork = cm.activeNetworkInfo
+        return when (activeNetwork?.type) {
+            android.net.ConnectivityManager.TYPE_WIFI -> "WiFi"
+            android.net.ConnectivityManager.TYPE_MOBILE -> "Mobile Data"
+            android.net.ConnectivityManager.TYPE_ETHERNET -> "Ethernet"
+            else -> "Unknown"
+        }
     }
 }
