@@ -11,7 +11,7 @@ object ServicesData {
     )
 
     // هذه البيانات سيتم رفعها لـ Supabase لتعمل كـ Cache أو مرجع
-    val initialServices = listOf(
+    val initialServices = listOf<EMisrService>(
         EMisrService(id = "1", sid = "101", name = "فودافون شحن", srv = "Vodafone", ico = "topup"),
         EMisrService(id = "2", sid = "102", name = "أورانج شحن", srv = "Orange", ico = "topup"),
         EMisrService(id = "3", sid = "103", name = "اتصالات شحن", srv = "Etisalat", ico = "topup"),
@@ -26,4 +26,12 @@ data class ServiceCategory(
     val id: String,
     val name: String,
     val icon: String
+)
+
+data class EMisrService(
+    val id: String,
+    val sid: String,
+    val name: String,
+    val srv: String,
+    val ico: String
 )

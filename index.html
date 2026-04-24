@@ -3,232 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ELDoctor Pay | منظومة الدفع والتحكم</title>
+    <title>ELDoctor Pay | منظومة التحكم المتكاملة</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #FF5722; --dark: #0a0a0a; --card: #161616; --text: #e0e0e0; --success: #4CAF50; --error: #f44336; }
+        :root { --primary: #FF5722; --dark: #0a0a0a; --card: #161616; --text: #e0e0e0; --success: #4CAF50; --error: #f44336; --gray: #888; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background: var(--dark); color: var(--text); margin: 0; min-height: 100vh; overflow-x: hidden; }
         .hidden { display: none !important; }
 
-        /* Navbar & Status */
-        .navbar { background: var(--card); padding: 15px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-        .status-chip { font-size: 0.7rem; padding: 4px 10px; border-radius: 15px; background: rgba(255,255,255,0.05); }
+        .navbar { background: var(--card); padding: 12px 20px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        .status-chip { font-size: 0.75rem; background: rgba(255,87,34,0.1); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(255,87,34,0.3); }
 
-        /* Containers */
-        .container { max-width: 600px; width: 94%; margin: 20px auto; background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #222; }
-        h1, h2, h3 { color: #fff; margin-top: 0; }
-        input, select, textarea { width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 0.95rem; }
-        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .container { max-width: 550px; width: 92%; margin: 20px auto; background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #222; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        h2 { margin-top: 0; border-right: 4px solid var(--primary); padding-right: 12px; font-size: 1.4rem; color: #fff; }
 
-        /* Dashboard Elements */
-        .balance-card { background: linear-gradient(135deg, #FF5722, #E64A19); padding: 25px; border-radius: 20px; color: white; margin-bottom: 20px; }
-        .grid-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
-        .menu-item { background: #222; padding: 15px 5px; border-radius: 15px; text-align: center; font-size: 0.75rem; border: 1px solid #333; cursor: pointer; }
-        .menu-item i { display: block; font-size: 1.5rem; margin-bottom: 8px; }
+        input, select, textarea { width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 0.95rem; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary); background: #222; }
 
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 15px; }
-        th { background: #222; padding: 10px; text-align: right; color: #888; }
+        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
+        button:active { transform: scale(0.98); }
+        .btn-secondary { background: #333; margin-top: 10px; }
+
+        .balance-card { background: linear-gradient(135deg, #1e1e1e, #111); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid var(--primary); margin-bottom: 20px; }
+        .grid-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .menu-item { background: #1a1a1a; padding: 15px 5px; border-radius: 15px; text-align: center; font-size: 0.75rem; border: 1px solid #333; cursor: pointer; }
+        .menu-item i { display: block; font-size: 1.6rem; margin-bottom: 8px; color: var(--primary); }
+
+        .service-row { display: flex; align-items: center; background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #222; cursor: pointer; }
+        .service-row i { font-size: 1.5rem; margin-left: 15px; color: var(--primary); }
+
+        .table-container { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th { background: #222; padding: 10px; text-align: right; color: var(--gray); }
         td { padding: 12px 10px; border-bottom: 1px solid #222; }
-        .status-tag { padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; }
 
-        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { border: 3px solid #333; border-top-color: var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 4px solid #333; border-top-color: var(--primary); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body onload="initSystem()">
 
-    <div id="loading-overlay">
+    <div id="loader">
         <div class="spinner"></div>
-        <p id="loading-text" style="margin-top: 15px; font-size: 0.9rem;">جاري مزامنة البيانات...</p>
+        <p id="loader-text" style="margin-top: 15px; color: var(--primary);">جاري المزامنة...</p>
     </div>
 
     <div class="navbar">
-        <img src="logo/logo.png" alt="Logo" style="height: 40px;">
-        <div class="status-chip">
-            <span id="time-display">00:00:00</span> | <span id="db-status">فحص...</span>
-        </div>
+        <div style="font-weight: bold; font-size: 1.2rem;">ELDoctor <span style="color:var(--primary)">Pay</span></div>
+        <div class="status-chip" id="clock-egy">00:00:00 م</div>
     </div>
 
-    <!-- 1. شاشة الدخول -->
+    <!-- شاشة الدخول -->
     <div id="view-login" class="container">
-        <div style="text-align: center; margin-bottom: 25px;">
-            <img src="logo/logo.png" width="80">
-            <h2>دخول آمن</h2>
-        </div>
-        <input type="tel" id="login-phone" placeholder="رقم الهاتف">
-        <input type="password" id="login-pass" placeholder="كلمة المرور">
-        <div style="margin-bottom: 15px; font-size: 0.85rem;">
-            <input type="checkbox" id="remember" style="width: auto; margin-right: 5px;"> ذكرني
-        </div>
+        <div style="text-align: center; margin-bottom: 20px;"><img src="logo/logo.png" width="70"><h3>الدخول للنظام</h3></div>
+        <input type="tel" id="login-phone" placeholder="رقم الهاتف" class="nav-input">
+        <input type="password" id="login-pass" placeholder="كلمة المرور" class="nav-input">
         <button onclick="handleLogin()">تسجيل الدخول</button>
-        <p style="text-align: center; margin-top: 20px; font-size: 0.9rem;">
-            ليس لديك حساب؟ <span style="color: var(--primary); cursor:pointer;" onclick="showView('view-signup-1')">إنشاء حساب</span>
-        </p>
+        <p style="text-align: center; margin-top: 20px;">ليس لديك حساب؟ <span style="color: var(--primary); cursor:pointer;" onclick="showView('view-signup-1')">إنشاء حساب</span></p>
     </div>
 
-    <!-- 2. التسجيل مرحلة 1 -->
+    <!-- إنشاء حساب - مرحلة 1 -->
     <div id="view-signup-1" class="container hidden">
         <h2>إنشاء حساب (1/2)</h2>
-        <input type="text" id="reg-nid" placeholder="الرقم القومي (14 رقم)" maxlength="14">
-        <input type="tel" id="reg-phone" placeholder="رقم الهاتف">
-        <button onclick="verifyEligibility()">التحقق والمتابعة</button>
-        <p onclick="showView('view-login')" style="text-align: center; color: var(--primary); cursor:pointer; margin-top: 15px;">العودة</p>
+        <input type="text" id="reg-nid" placeholder="الرقم القومي (14 رقم)" maxlength="14" class="nav-input">
+        <input type="tel" id="reg-phone" placeholder="رقم الهاتف" class="nav-input">
+        <button onclick="checkEligibility()">تحقق ومتابعة</button>
+        <button class="btn-secondary" onclick="showView('view-login')">إلغاء</button>
     </div>
 
-    <!-- 3. لوحة تحكم التاجر -->
-    <div id="view-merchant" class="container hidden">
+    <!-- إنشاء حساب - مرحلة 2 -->
+    <div id="view-signup-2" class="container hidden">
+        <h2>استكمال البيانات (2/2)</h2>
+        <input type="text" id="reg-name" placeholder="الاسم الكامل" class="nav-input">
+        <input type="text" id="reg-prov" placeholder="المحافظة" readonly style="background:#222; color:var(--primary);">
+        <input type="text" id="reg-addr" placeholder="العنوان بالتفصيل" class="nav-input">
+        <input type="password" id="reg-pass" placeholder="كلمة المرور" class="nav-input">
+        <button onclick="submitSignup()">إرسال طلب التفعيل</button>
+    </div>
+
+    <!-- الداشبورد الرئيسي -->
+    <div id="view-dash" class="container hidden">
         <div class="balance-card">
-            <div style="font-size: 0.9rem; opacity: 0.9;">أهلاً بك، <span id="m-name">التاجر</span></div>
-            <div style="font-size: 1.8rem; font-weight: bold; margin: 10px 0;">
-                <span id="m-balance">0.00</span> <small>ج.م</small>
-            </div>
-            <div style="font-size: 0.7rem; opacity: 0.8;">رقم التاجر: <span id="m-code">#000</span></div>
+            <div style="font-size: 0.9rem; opacity: 0.8;">الرصيد الحالي</div>
+            <div style="font-size: 2.2rem; font-weight: bold; margin: 10px 0; color: var(--primary);"><span id="u-balance">0.00</span> <small>ج.م</small></div>
+            <div id="u-info" style="font-size: 0.7rem; color:var(--gray);">جاري التحميل...</div>
         </div>
 
         <div class="grid-menu">
-            <div class="menu-item" onclick="alert('شحن رصيد')"><i>📱</i>شحن</div>
-            <div class="menu-item" onclick="alert('تحويل')"><i>💸</i>تحويل</div>
-            <div class="menu-item" onclick="showView('view-deposit')"><i>➕</i>إيداع</div>
-            <div class="menu-item" onclick="showView('view-tree')"><i>🌳</i>شجرة</div>
-            <div class="menu-item" onclick="showView('view-tickets')"><i>🎫</i>دعم فني</div>
-            <div class="menu-item" onclick="location.reload()"><i>🚪</i>خروج</div>
+            <div class="menu-item" onclick="loadServices('topup')"><i>📱</i>شحن</div>
+            <div class="menu-item" onclick="loadServices('bills')"><i>⚡</i>فواتير</div>
+            <div class="menu-item" onclick="loadServices('internet')"><i>🌐</i>إنترنت</div>
+            <div class="menu-item" onclick="showMerchantTree()"><i>🌳</i>المناديب</div>
+            <div class="menu-item" onclick="showView('view-deposit')"><i>🏦</i>إيداع</div>
+            <div class="menu-item" onclick="showView('view-tickets')"><i>🆘</i>دعم</div>
         </div>
 
         <h3>آخر العمليات</h3>
-        <table id="txn-table">
-            <thead><tr><th>#</th><th>النوع</th><th>القيمة</th><th>الحالة</th></tr></thead>
-            <tbody><tr><td colspan="4" style="text-align:center; color:#555;">لا توجد عمليات حالياً</td></tr></tbody>
-        </table>
+        <div class="table-container">
+            <table id="txn-table"><thead><tr><th>العملية</th><th>القيمة</th><th>الحالة</th></tr></thead><tbody></tbody></table>
+        </div>
     </div>
 
-    <!-- 4. شاشة الإيداع -->
-    <div id="view-deposit" class="container hidden">
-        <h3>طلب إيداع جديد</h3>
-        <select id="dep-bank">
-            <option>فودافون كاش</option>
-            <option>البنك الأهلي المصري</option>
-            <option>بنك مصر</option>
-            <option>انستا باي</option>
-        </select>
-        <input type="text" id="dep-order" placeholder="رقم الأمر (تلقائي)" readonly>
-        <input type="number" id="dep-amount" placeholder="القيمة المودعة">
-        <input type="text" id="dep-name" placeholder="اسم المودع">
-        <textarea id="dep-notes" placeholder="ملاحظات إضافية"></textarea>
-        <button onclick="submitDeposit()">إرسال طلب الإيداع</button>
-        <button onclick="showView('view-merchant')" style="background:#333; margin-top:10px;">رجوع</button>
+    <!-- شاشة شجرة التجار (المناديب) -->
+    <div id="view-tree" class="container hidden">
+        <h2>شجرة المناديب والوكلاء</h2>
+        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+            <input type="tel" id="search-merchant" placeholder="بحث برقم الهاتف..." style="margin-bottom: 0;">
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>الاسم</th><th>الهاتف</th><th>الرصيد</th><th>الحالة</th></tr>
+                </thead>
+                <tbody id="tree-body">
+                    <!-- سيتم تعبئتها برمجياً -->
+                </tbody>
+            </table>
+        </div>
+        <div id="tree-empty" class="hidden" style="text-align: center; padding: 20px; color: var(--gray);">
+            لا يوجد مناديب مسجلين تحت حسابك حالياً.
+        </div>
+        <button class="btn-secondary" onclick="showView('view-dash')">رجوع للرئيسية</button>
     </div>
 
-    <!-- 5. الدعم الفني -->
-    <div id="view-tickets" class="container hidden">
-        <h3>تذكرة دعم فني</h3>
-        <select id="tk-type">
-            <option>مشاكل الفواتير</option>
-            <option>مشاكل تقنية</option>
-            <option>طلب تفعيل</option>
-        </select>
-        <input type="text" id="tk-invoice" placeholder="رقم الفاتورة (إن وجد)">
-        <textarea id="tk-msg" placeholder="اكتب طلبك بالتفصيل..."></textarea>
-        <button onclick="submitTicket()">إرسال التذكرة</button>
-
-        <h3 style="margin-top: 30px;">متابعة الشكاوي</h3>
-        <table id="tk-table">
-            <thead><tr><th>#</th><th>الموضوع</th><th>التاريخ</th><th>الحالة</th></tr></thead>
-            <tbody></tbody>
-        </table>
-        <button onclick="showView('view-merchant')" style="background:#333; margin-top:20px;">رجوع</button>
+    <!-- قائمة الخدمات الفرعية -->
+    <div id="view-services" class="container hidden">
+        <h2 id="service-title">الخدمات المتاحة</h2>
+        <div id="services-list-container"></div>
+        <button class="btn-secondary" onclick="showView('view-dash')">رجوع للرئيسية</button>
     </div>
 
-    <script>
+    <!-- شاشة الدفع -->
+    <div id="view-pay" class="container hidden">
+        <h2 id="pay-title">تنفيذ العملية</h2>
+        <input type="tel" id="pay-target" placeholder="رقم الموبايل أو المشترك" class="nav-input">
+        <input type="number" id="pay-amount" placeholder="المبلغ" class="nav-input">
+        <div id="pay-fees" style="margin-bottom: 15px; font-size: 0.8rem; color: var(--gray);">الرسوم: 0.00 ج.م</div>
+        <button onclick="executePayment()">تأكيد الدفع</button>
+        <button class="btn-secondary" onclick="showView('view-services')">إلغاء</button>
+    </div>
+
+    <script type="module">
+        import Utils from './utils.js';
         const { createClient } = supabase;
         const _client = createClient('https://wwkllpornhzwovsvyikv.supabase.co', 'sb_publishable_QcDiCoyD921ZNJ-pBd_KKw_LgQzeIpU');
+        let currentUser = null;
 
-        // 1. إدارة الوقت (مصر)
-        function updateTime() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo', hour12: true });
-            document.getElementById('time-display').innerText = timeStr;
-        }
-        setInterval(updateTime, 1000);
+        window.initSystem = () => {
+            setInterval(() => document.getElementById('clock-egy').innerText = Utils.getCairoTime(), 1000);
+            setupEnterNav();
+        };
 
-        // 2. التتبع المتقدم
-        async function getDeviceInfo() {
-            const ip = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ip: '0.0.0.0'}));
-            return {
-                ip: ip.ip,
-                os: navigator.platform,
-                browser: navigator.userAgent,
-                cores: navigator.hardwareConcurrency,
-                screen: `${window.screen.width}x${window.screen.height}`,
-                fingerprint: btoa(navigator.userAgent + screen.width)
-            };
+        function setupEnterNav() {
+            document.querySelectorAll('.nav-input').forEach((input, i, all) => {
+                input.onkeypress = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        i < all.length - 1 ? all[i+1].focus() : input.closest('.container').querySelector('button').click();
+                    }
+                };
+            });
         }
 
-        function showView(id) {
+        window.showView = (id) => {
             document.querySelectorAll('.container').forEach(v => v.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-        }
+            setupEnterNav();
+            window.scrollTo(0,0);
+        };
 
-        async function handleLogin() {
-            const phone = document.getElementById('login-phone').value;
-            const pass = document.getElementById('login-pass').value;
-            setLoading(true);
-
-            const info = await getDeviceInfo();
-            const { data, error } = await _client.auth.signInWithPassword({
-                email: `${phone.replace(/[^0-9]/g, '')}@drpay.app`,
-                password: pass
-            });
-
-            if (error) { alert("فشل الدخول: " + error.message); setLoading(false); return; }
-
-            const { data: prof } = await _client.from('profiles').select('*').eq('id', data.user.id).single();
-            if (!prof.is_active) {
-                alert("🔒 الحساب بانتظار تفعيل الإدارة");
-                await _client.auth.signOut();
-            } else {
-                document.getElementById('m-name').innerText = prof.full_name;
-                document.getElementById('m-balance').innerText = prof.balance || "0.00";
-                document.getElementById('m-code').innerText = "#" + prof.id.substring(0, 5);
-                showView('view-merchant');
-                // تحديث بيانات الدخول (IP والموقع)
-                await _client.from('profiles').update({ last_ip_public: info.ip, device_id: info.fingerprint }).eq('id', prof.id);
-            }
-            setLoading(false);
-        }
-
-        async function verifyEligibility() {
+        window.checkEligibility = async () => {
             const nid = document.getElementById('reg-nid').value;
             const phone = document.getElementById('reg-phone').value;
-            if (nid.length !== 14) { alert("الرقم القومي غير صحيح"); return; }
-
-            setLoading(true);
+            if (nid.length !== 14) { alert("تأكد من الرقم القومي"); return; }
+            setLoading(true, "جاري الفحص...");
             const { data } = await _client.from('profiles').select('id').or(`phone_number.eq.${phone},national_id.eq.${nid}`);
-            if (data && data.length > 0) {
-                alert("هذه البيانات مسجلة مسبقاً!");
-            } else {
-                alert("تم التحقق بنجاح. سيتم فتح استكمال البيانات...");
-                // هنا يتم فتح المرحلة الثانية (تم اختصارها في الكود للمساحة)
+            if (data?.length > 0) { alert("البيانات مسجلة مسبقاً!"); setLoading(false); }
+            else {
+                const govs = {"01":"القاهرة", "02":"الإسكندرية", "21":"الجيزة"};
+                document.getElementById('reg-prov').value = govs[nid.substring(7,9)] || "محافظة أخرى";
+                showView('view-signup-2'); // انتقال فوري
+                setLoading(false);
             }
+        };
+
+        window.handleLogin = async () => {
+            const phone = document.getElementById('login-phone').value;
+            const pass = document.getElementById('login-pass').value;
+            setLoading(true, "تأمين الاتصال...");
+            const tel = await Utils.getDetailedTelemetry();
+            const { data, error } = await _client.auth.signInWithPassword({ email: `${phone}@drpay.app`, password: pass });
+            if (error) { alert("خطأ في الدخول"); setLoading(false); return; }
+            const { data: prof } = await _client.from('profiles').select('*').eq('id', data.user.id).single();
+            if (!prof.is_active) { alert("الحساب بانتظار التفعيل"); await _client.auth.signOut(); setLoading(false); return; }
+            currentUser = prof;
+            updateUI(prof);
+            showView('view-dash');
             setLoading(false);
+        };
+
+        window.showMerchantTree = async () => {
+            setLoading(true, "جاري جلب بيانات المناديب...");
+            const { data, error } = await _client
+                .from('profiles')
+                .select('full_name, phone_number, balance, is_active')
+                .eq('parent_id', currentUser.id);
+
+            setLoading(false);
+            const tbody = document.getElementById('tree-body');
+            const emptyHint = document.getElementById('tree-empty');
+            tbody.innerHTML = '';
+
+            window.allMerchants = data || []; // حفظ البيانات للبحث السريع
+
+            if (data && data.length > 0) {
+                emptyHint.classList.add('hidden');
+                renderTreeTable(data);
+            } else {
+                emptyHint.classList.remove('hidden');
+            }
+            showView('view-tree');
+        };
+
+        function renderTreeTable(list) {
+            const tbody = document.getElementById('tree-body');
+            tbody.innerHTML = '';
+            list.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${m.full_name}</td>
+                    <td>${m.phone_number}</td>
+                    <td style="color:var(--success); font-weight:bold;">${m.balance.toFixed(2)}</td>
+                    <td><span style="color:${m.is_active ? 'var(--success)' : 'var(--error)'}">${m.is_active ? 'نشط' : 'معلق'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        async function submitDeposit() {
-            setLoading(true);
-            const { error } = await _client.from('deposits').insert([{
-                bank_name: document.getElementById('dep-bank').value,
-                amount: document.getElementById('dep-amount').value,
-                depositor_name: document.getElementById('dep-name').value,
-                notes: document.getElementById('dep-notes').value
-            }]);
-            if (!error) { alert("تم إرسال طلب الإيداع بنجاح"); showView('view-merchant'); }
-            setLoading(false);
+        // إضافة مستمع لحدث البحث
+        document.getElementById('search-merchant').oninput = (e) => {
+            const term = e.target.value;
+            const filtered = window.allMerchants.filter(m => m.phone_number.includes(term) || m.full_name.includes(term));
+            renderTreeTable(filtered);
+        };
+
+        function updateUI(prof) {
+            document.getElementById('u-balance').innerText = prof.balance.toFixed(2);
+            document.getElementById('u-info').innerText = `تاجر: ${prof.full_name} | كود: #${prof.id.substring(0,5).toUpperCase()}`;
         }
 
-        function setLoading(s) {
-            document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none';
+        window.loadServices = (cat) => {
+            const services = {
+                'topup': [{n:'فودافون شحن', i:'📱'}, {n:'أورانج شحن', i:'📱'}, {n:'اتصالات شحن', i:'📱'}],
+                'bills': [{n:'فاتورة الكهرباء', i:'⚡'}, {n:'فاتورة المياه', i:'💧'}]
+            };
+            const list = document.getElementById('services-list-container');
+            list.innerHTML = '';
+            (services[cat] || []).forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'service-row';
+                div.innerHTML = `<i>${s.i}</i><span>${s.n}</span>`;
+                div.onclick = () => { document.getElementById('pay-title').innerText = s.n; showView('view-pay'); };
+                list.appendChild(div);
+            });
+            showView('view-services');
+        };
+
+        function setLoading(s, t) {
+            document.getElementById('loader').style.display = s ? 'flex' : 'none';
+            document.getElementById('loader-text').innerText = t;
         }
     </script>
 </body>
