@@ -72,25 +72,40 @@ class AuthRepository {
             val cleanPhone = phone.trim().replace(Regex("[^0-9]"), "")
             val email = "${cleanPhone}@drpay.app"
             
-            supabase.auth.signInWith(Email) {
-                this.email = email
-                this.password = password
-            }
-            
-            val profile = getCurrentProfile() ?: return@withContext Result.failure(Exception("لم يتم العثور على الحساب"))
-            
-            if (!profile.is_active) {
-                supabase.auth.signOut()
-                return@withContext Result.failure(Exception("حسابك بانتظار تفعيل الإدارة"))
+            // 1. تسجيل الدخول
+            try {
+                supabase.auth.signInWith(Email) {
+                    this.email = "$phone@drpay.app"
+                    this.password = password
+                }
+            } catch (e: Exception) {
+                val errorMsg = when {
+                    e.message?.contains("Invalid login") == true -> "رقم الهاتف أو كلمة المرور غير صحيحة"
+                    e.message?.contains("network") == true -> "خطأ في الاتصال بالإنترنت"
+                    else -> "فشل تسجيل الدخول: ${e.localizedMessage}"
+                }
+                return@withContext Result.failure(Exception(errorMsg))
             }
 
-            // منطق التحكم في الجهاز
+            // 2. التحقق من جدول البروفايل
+            val profile = getCurrentProfile() ?: run {
+                supabase.auth.signOut()
+                return@withContext Result.failure(Exception("لم يتم العثور على بيانات هذا الحساب"))
+            }
+
+            // 3. التحقق من حالة التفعيل
+            if (!profile.is_active) {
+                supabase.auth.signOut()
+                return@withContext Result.failure(Exception("🔒 حسابك بانتظار تفعيل الإدارة"))
+            }
+
+            // 4. قفل الجهاز (Device Lock)
             if (currentDeviceId != null) {
                 if (profile.device_id != null && profile.device_id != currentDeviceId) {
                     supabase.auth.signOut()
-                    return@withContext Result.failure(Exception("هذا الحساب مقيد بجهاز آخر. تواصل مع الدعم الفني."))
+                    return@withContext Result.failure(Exception("هذا الحساب مقيد بجهاز آخر. تواصل مع الدعم."))
                 } else if (profile.device_id == null) {
-                    // ربط الجهاز الأول
+                    // ربط الجهاز الأول تلقائياً
                     supabase.postgrest.from("profiles")
                         .update(mapOf("device_id" to currentDeviceId)) {
                             filter { eq("id", profile.id) }

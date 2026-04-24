@@ -6,34 +6,29 @@
     <title>ELDoctor Pay | منظومة الدفع الذكي</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #FF5722; --dark: #0a0a0a; --card: #161616; --text: #e0e0e0; --success: #4CAF50; }
+        :root { --primary: #FF5722; --dark: #0a0a0a; --card: #161616; --text: #e0e0e0; --success: #4CAF50; --error: #f44336; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--dark); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-
         .navbar { width: 100%; padding: 15px; background: var(--card); text-align: center; border-bottom: 2px solid var(--primary); }
         .navbar img { width: 65px; margin-bottom: 5px; }
-
         .container { max-width: 500px; width: 92%; margin: 20px 0; background: var(--card); padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); border: 1px solid #222; }
         h1, h2 { color: #fff; text-align: center; margin-bottom: 20px; font-size: 1.4rem; }
-
         .form-group { margin-bottom: 15px; }
-        input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; background: #1f1f1f; color: white; font-size: 0.95rem; }
+        input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; background: #1f1f1f; color: white; font-size: 0.95rem; }
         input:focus { border-color: var(--primary); outline: none; }
-
         button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
-
+        button:disabled { background: #555; }
         .step-hidden { display: none; }
         .info-msg { background: rgba(255,87,34,0.1); border-right: 4px solid var(--primary); padding: 12px; font-size: 0.8rem; margin-bottom: 15px; color: #ffab91; }
-
-        .tracking-label { font-size: 0.7rem; color: #555; text-align: center; margin-top: 10px; }
+        .error-text { color: var(--error); font-size: 0.85rem; text-align: center; margin-top: 10px; display: none; }
         #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
     <div id="loading-overlay">
         <div style="border: 3px solid #333; border-top-color: var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
-        <p style="margin-top: 15px;">جاري تأمين الطلب وتشفير البيانات...</p>
+        <p style="margin-top: 15px;">جاري معالجة البيانات...</p>
     </div>
 
     <div class="navbar">
@@ -41,49 +36,53 @@
         <div style="font-size: 0.9rem; color: var(--primary); font-weight: bold;">ELDoctor Pay</div>
     </div>
 
-    <!-- Login -->
+    <!-- تسجيل الدخول -->
     <div id="login-section" class="container">
         <h1>تسجيل الدخول</h1>
-        <input type="text" id="login-phone" placeholder="رقم الهاتف">
-        <input type="password" id="login-pass" placeholder="كلمة المرور">
-        <button onclick="handleLogin()">دخول آمن</button>
-        <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888;" onclick="toggleAuth(true)">مستخدم جديد؟ <b style="color: var(--primary);">إنشاء حساب</b></div>
+        <div class="form-group">
+            <input type="text" id="login-phone" placeholder="رقم الهاتف">
+        </div>
+        <div class="form-group">
+            <input type="password" id="login-pass" placeholder="كلمة المرور">
+        </div>
+        <button id="btn-login" onclick="handleLogin()">دخول آمن</button>
+        <div id="login-error" class="error-text"></div>
+        <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888;" onclick="toggleAuth(true)">مستخدم جديد؟ <b style="color: var(--primary); cursor:pointer;">إنشاء حساب</b></div>
     </div>
 
-    <!-- Signup -->
+    <!-- إنشاء حساب -->
     <div id="signup-section" class="container" style="display: none;">
         <h1>إنشاء حساب تاجر</h1>
-
         <div id="step-1">
-            <div class="info-msg">المرحلة 1: التحقق من الهوية الوطنية</div>
+            <div class="info-msg">المرحلة 1: التحقق من الهوية</div>
             <input type="text" id="reg-national-id" placeholder="الرقم القومي (14 رقم)" maxlength="14" oninput="autoExtractNID()">
-            <input type="text" id="reg-phone" placeholder="رقم الهاتف">
+            <input type="text" id="reg-phone" placeholder="رقم الهاتف" style="margin-top:10px;">
             <div id="nid-hint" style="font-size: 0.75rem; color: var(--success); margin: 5px 0 10px;"></div>
             <button onclick="checkEligibility()">التحقق والمتابعة</button>
         </div>
 
         <div id="step-2" class="step-hidden">
-            <div class="info-msg">المرحلة 2: استكمال البيانات وتوثيق الجهاز</div>
+            <div class="info-msg">المرحلة 2: استكمال البيانات</div>
             <input type="text" id="reg-fullname" placeholder="الاسم الكامل كما في البطاقة">
-            <input type="text" id="reg-province" placeholder="المحافظة" readonly>
-            <input type="text" id="reg-address" placeholder="العنوان (المركز / القرية)">
-            <input type="password" id="reg-pass" placeholder="كلمة المرور">
-            <input type="password" id="reg-confirm" placeholder="تأكيد كلمة المرور">
+            <input type="text" id="reg-province" placeholder="المحافظة" readonly style="margin-top:10px;">
+            <input type="text" id="reg-address" placeholder="العنوان بالتفصيل" style="margin-top:10px;">
+            <input type="password" id="reg-pass" placeholder="كلمة المرور" style="margin-top:10px;">
+            <input type="password" id="reg-confirm" placeholder="تأكيد كلمة المرور" style="margin-top:10px;">
 
-            <p style="font-size: 0.8rem; margin: 15px 0 5px; color: #888;">📷 صور الهوية (رابط الصورة):</p>
-            <input type="text" id="img-front" placeholder="رابط صورة البطاقة (الوجه)">
-            <input type="text" id="img-back" placeholder="رابط صورة البطاقة (الظهر)">
+            <p style="font-size: 0.8rem; margin: 15px 0 5px; color: #888;">📷 صور الهوية:</p>
+            <input type="text" id="img-front" placeholder="رابط صورة الوجه">
+            <input type="text" id="img-back" placeholder="رابط صورة الظهر" style="margin-top:10px;">
 
             <button onclick="completeSignup()">تقديم طلب الانضمام</button>
         </div>
-
-        <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888;" onclick="toggleAuth(false)">لديك حساب؟ <b style="color: var(--primary);">دخول</b></div>
+        <div id="reg-error" class="error-text"></div>
+        <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888;" onclick="toggleAuth(false)">لديك حساب؟ <b style="color: var(--primary); cursor:pointer;">دخول</b></div>
     </div>
 
     <div id="status-section" class="container" style="display: none; text-align: center;">
         <div style="font-size: 3rem; margin-bottom: 15px;">⏳</div>
         <h2>طلبك قيد المراجعة</h2>
-        <p style="color: #888; font-size: 0.9rem;">شكراً لانضمامك. فريق الإدارة يقوم بمراجعة بياناتك وصور الهوية الآن. سيتم تفعيل حسابك فور التأكد.</p>
+        <p style="color: #888; font-size: 0.9rem;">شكراً لانضمامك. يتم مراجعة بياناتك الآن وسيتم تفعيل الحساب خلال 24 ساعة.</p>
         <button onclick="location.reload()" style="background: #333;">العودة</button>
     </div>
 
@@ -97,6 +96,7 @@
         function toggleAuth(s) {
             document.getElementById('login-section').style.display = s ? 'none' : 'block';
             document.getElementById('signup-section').style.display = s ? 'block' : 'none';
+            document.querySelectorAll('.error-text').forEach(e => e.style.display = 'none');
         }
 
         function autoExtractNID() {
@@ -108,41 +108,66 @@
             }
         }
 
-        async function getTracking() {
-            const loader = document.getElementById('loading-overlay');
-            loader.style.display = 'flex';
-            try {
-                const ipReq = await fetch('https://api.ipify.org?format=json').then(r => r.json());
-                const pos = await new Promise(r => navigator.geolocation.getCurrentPosition(r, () => r({coords:{latitude:0,longitude:0}})));
+        async function getDeviceInfo() {
+            const ipReq = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ip: '0.0.0.0'}));
+            return {
+                last_ip_public: ipReq.ip,
+                device_model: navigator.platform,
+                browser_name: navigator.userAgent,
+                device_fingerprint: btoa(navigator.userAgent + window.screen.width)
+            };
+        }
 
-                return {
-                    last_ip_public: ipReq.ip,
-                    network_ip: ipReq.ip, // في الويب الـ IP العام هو المتاح
-                    os_name: navigator.platform,
-                    device_model: navigator.userAgent.split('(')[1]?.split(')')[0] || 'Unknown',
-                    browser_name: navigator.userAgent,
-                    language: navigator.language,
-                    connection_type: navigator.connection?.effectiveType || 'Unknown',
-                    download_speed: navigator.connection?.downlink + " Mbps",
-                    cpu_cores: navigator.hardwareConcurrency || 0,
-                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
-                    color_depth: window.screen.colorDepth,
-                    location_lat: pos.coords.latitude,
-                    location_lng: pos.coords.longitude,
-                    location_accuracy: pos.coords.accuracy || 0,
-                    device_fingerprint: btoa(navigator.userAgent + window.screen.width),
-                    browser_fingerprint: btoa(navigator.language + window.screen.colorDepth)
-                };
-            } finally { loader.style.display = 'none'; }
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.innerText = "❌ " + msg;
+            el.style.display = 'block';
+        }
+
+        async function handleLogin() {
+            const phoneInput = document.getElementById('login-phone').value.trim().replace(/[^0-9]/g, '');
+            const pass = document.getElementById('login-pass').value;
+            const errId = 'login-error';
+            document.getElementById(errId).style.display = 'none';
+
+            if (!phoneInput || !pass) { showError(errId, "يرجى إدخال الهاتف وكلمة المرور"); return; }
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+            const { data, error } = await supabase.auth.signInWithPassword({ email: `${phoneInput}@drpay.app`, password: pass });
+
+            if (error) {
+                document.getElementById('loading-overlay').style.display = 'none';
+                showError(errId, error.message.includes("Invalid login") ? "بيانات الدخول غير صحيحة" : "خطأ في الاتصال بالسيرفر");
+                return;
+            }
+
+            const { data: prof, error: pErr } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+            const device = await getDeviceInfo();
+
+            if (!prof) {
+                showError(errId, "لم يتم العثور على بروفايل مرتبط بهذا الحساب");
+            } else if (!prof.is_active) {
+                showError(errId, "🔒 حسابك بانتظار تفعيل الإدارة");
+                await supabase.auth.signOut();
+            } else if (prof.device_id && prof.device_id !== device.device_fingerprint) {
+                showError(errId, "هذا الحساب مقيد بجهاز آخر. تواصل مع الدعم.");
+                await supabase.auth.signOut();
+            } else {
+                alert("✅ أهلاً بك " + prof.full_name);
+                if (!prof.device_id) {
+                    await supabase.from('profiles').update({ device_id: device.device_fingerprint }).eq('id', prof.id);
+                }
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
         }
 
         async function checkEligibility() {
-            const phone = document.getElementById('reg-phone').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim().replace(/[^0-9]/g, '');
             const nid = document.getElementById('reg-national-id').value.trim();
-            if (phone.length < 10 || nid.length !== 14) { alert("⚠️ بيانات غير صحيحة"); return; }
+            if (phone.length < 10 || nid.length !== 14) { showError('reg-error', "بيانات الهوية أو الهاتف غير صحيحة"); return; }
 
             const { data } = await supabase.from('profiles').select('id').or(`phone_number.eq.${phone},national_id.eq.${nid}`);
-            if (data?.length > 0) { alert("❌ هذا المستخدم مسجل مسبقاً"); }
+            if (data?.length > 0) { showError('reg-error', "عذراً، هذا الرقم القومي أو الهاتف مسجل مسبقاً"); }
             else {
                 document.getElementById('step-1').style.display = 'none';
                 document.getElementById('step-2').classList.remove('step-hidden');
@@ -151,13 +176,15 @@
 
         async function completeSignup() {
             const pass = document.getElementById('reg-pass').value;
-            if (pass !== document.getElementById('reg-confirm').value) { alert("❌ كلمة المرور غير متطابقة"); return; }
+            if (pass !== document.getElementById('reg-confirm').value) { showError('reg-error', "كلمات المرور غير متطابقة"); return; }
+            if (pass.length < 6) { showError('reg-error', "كلمة المرور يجب أن تكون 6 رموز على الأقل"); return; }
 
-            const tracking = await getTracking();
-            const phone = document.getElementById('reg-phone').value.trim();
+            document.getElementById('loading-overlay').style.display = 'flex';
+            const phone = document.getElementById('reg-phone').value.trim().replace(/[^0-9]/g, '');
+            const device = await getDeviceInfo();
 
             const { data: auth, error: aErr } = await supabase.auth.signUp({ email: `${phone}@drpay.app`, password: pass });
-            if (aErr) { alert(aErr.message); return; }
+            if (aErr) { showError('reg-error', "فشل إنشاء الحساب: " + aErr.message); document.getElementById('loading-overlay').style.display = 'none'; return; }
 
             const { error: pErr } = await supabase.from('profiles').insert([{
                 id: auth.user.id,
@@ -169,27 +196,15 @@
                 id_card_front_url: document.getElementById('img-front').value,
                 id_card_back_url: document.getElementById('img-back').value,
                 is_active: false,
-                ...tracking
+                ...device
             }]);
 
+            document.getElementById('loading-overlay').style.display = 'none';
             if (!pErr) {
                 document.getElementById('signup-section').style.display = 'none';
                 document.getElementById('status-section').style.display = 'block';
-            } else { alert("Error: " + pErr.message); }
-        }
-
-        async function handleLogin() {
-            const phone = document.getElementById('login-phone').value.trim();
-            const pass = document.getElementById('login-pass').value;
-            const { data, error } = await supabase.auth.signInWithPassword({ email: `${phone}@drpay.app`, password: pass });
-
-            if (error) { alert("❌ خطأ في بيانات الدخول"); return; }
-
-            const { data: prof } = await supabase.from('profiles').select('is_active, full_name').eq('id', data.user.id).single();
-            if (prof?.is_active) { alert("✅ أهلاً بك " + prof.full_name); }
-            else { alert("🔒 حسابك بانتظار موافقة الإدارة"); await supabase.auth.signOut(); }
+            } else { showError('reg-error', "خطأ في حفظ البيانات: " + pErr.message); }
         }
     </script>
-    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 </body>
 </html>
