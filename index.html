@@ -86,6 +86,28 @@
         <button onclick="location.reload()" style="background: #333;">العودة</button>
     </div>
 
+    <!-- لوحة تحكم المسؤول -->
+    <div id="admin-section" class="container" style="display: none; max-width: 800px;">
+        <h1 style="color: var(--primary);">لوحة تحكم الإدارة</h1>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+            <div style="background: #222; padding: 15px; border-radius: 12px; text-align: center;">
+                <div id="count-total" style="font-size: 1.5rem; font-weight: bold;">0</div>
+                <div style="font-size: 0.8rem; color: #888;">إجمالي التجار</div>
+            </div>
+            <div style="background: #222; padding: 15px; border-radius: 12px; text-align: center;">
+                <div id="count-pending" style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">0</div>
+                <div style="font-size: 0.8rem; color: #888;">طلبات انتظار</div>
+            </div>
+        </div>
+
+        <h2>طلبات التفعيل الجديدة</h2>
+        <div id="merchants-list" style="max-height: 400px; overflow-y: auto;">
+            <!-- سيتم تحميل التجار هنا -->
+            <p style="text-align: center; color: #666;">جاري جلب البيانات...</p>
+        </div>
+        <button onclick="location.reload()" style="background: #333; margin-top: 20px;">تسجيل الخروج</button>
+    </div>
+
     <script>
         const supabaseUrl = 'https://wwkllpornhzwovsvyikv.supabase.co';
         const supabaseKey = 'sb_publishable_QcDiCoyD921ZNJ-pBd_KKw_LgQzeIpU';
@@ -133,6 +155,14 @@
             if (!phoneInput || !pass) { showError(errId, "يرجى إدخال الهاتف وكلمة المرور"); return; }
 
             document.getElementById('loading-overlay').style.display = 'flex';
+
+            // تحقق خاص للمسؤول (يمكنك تغييره لاحقاً)
+            if (phoneInput === "01000000000" && pass === "admin123") {
+                showAdminPanel();
+                document.getElementById('loading-overlay').style.display = 'none';
+                return;
+            }
+
             const { data, error } = await supabase.auth.signInWithPassword({ email: `${phoneInput}@drpay.app`, password: pass });
 
             if (error) {
@@ -146,6 +176,8 @@
 
             if (!prof) {
                 showError(errId, "لم يتم العثور على بروفايل مرتبط بهذا الحساب");
+            } else if (prof.role === 'admin') {
+                showAdminPanel();
             } else if (!prof.is_active) {
                 showError(errId, "🔒 حسابك بانتظار تفعيل الإدارة");
                 await supabase.auth.signOut();
@@ -157,8 +189,57 @@
                 if (!prof.device_id) {
                     await supabase.from('profiles').update({ device_id: device.device_fingerprint }).eq('id', prof.id);
                 }
+                // توجيه لصفحة التاجر (يمكن إضافتها لاحقاً)
             }
             document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        async function showAdminPanel() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('admin-section').style.display = 'block';
+            loadMerchants();
+        }
+
+        async function loadMerchants() {
+            const { data: all } = await supabase.from('profiles').select('id');
+            const { data: pending } = await supabase.from('profiles').select('*').eq('is_active', false);
+
+            document.getElementById('count-total').innerText = all?.length || 0;
+            document.getElementById('count-pending').innerText = pending?.length || 0;
+
+            const list = document.getElementById('merchants-list');
+            list.innerHTML = '';
+
+            if (!pending || pending.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">لا توجد طلبات معلقة حالياً</p>';
+                return;
+            }
+
+            pending.forEach(m => {
+                const item = document.createElement('div');
+                item.style = "background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-right: 4px solid var(--primary);";
+                item.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 5px;">${m.full_name}</div>
+                    <div style="font-size: 0.8rem; color: #aaa;">📞 ${m.phone_number} | 📍 ${m.province}</div>
+                    <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;">🪪 الرقم القومي: ${m.national_id}</div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button onclick="activateMerchant('${m.id}')" style="padding: 8px; font-size: 0.8rem; background: var(--success);">تفعيل الحساب</button>
+                        <button onclick="window.open('${m.id_card_front_url}')" style="padding: 8px; font-size: 0.8rem; background: #444;">صورة الهوية</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        async function activateMerchant(id) {
+            if (!confirm("هل أنت متأكد من تفعيل هذا التاجر؟")) return;
+            const { error } = await supabase.from('profiles').update({ is_active: true }).eq('id', id);
+            if (!error) {
+                alert("تم تفعيل التاجر بنجاح!");
+                loadMerchants();
+            } else {
+                alert("خطأ أثناء التفعيل: " + error.message);
+            }
         }
 
         async function checkEligibility() {
