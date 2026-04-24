@@ -1,0 +1,35 @@
+# Android IntelliJ project ignores
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/.idea/vcs.xml
+/.idea/deploymentTargetDropDown.xml
+/.idea/shelf/
+/.idea/inspectionProfiles/
+/build
+.DS_Store
+/captures
+.externalNativeBuild
+.cxx
+*.iml
+
+# App-specific
+app/build/
+app/*.iml
+
+# Kotlin
+.kotlin/
+*.kotlin_module
+
+# Gradle
+.gradle/
+build/
+
+# User-specific
+local.properties
+.DS_Store
