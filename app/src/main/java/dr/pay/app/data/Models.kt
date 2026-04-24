@@ -14,7 +14,7 @@ data class Profile(
     val id_card_front_url: String? = null,
     val id_card_back_url: String? = null,
     val merchant_code: String? = null,
-    val user_type: String = "merchant",
+    val user_type: String = "merchant", // admin, merchant, sub_merchant
     val parent_id: String? = null,
     val balance: Double = 0.0,
     val is_active: Boolean = false,
@@ -64,13 +64,13 @@ data class Transaction(
 data class DepositRequest(
     val id: Int? = null,
     val user_id: String,
-    val bank_name: String,
+    val bank_name: String, // اسم البنك (مثلاً: بنك مصر، فودافون كاش)
     val amount: Double,
     val depositor_name: String,
-    val order_number: String? = null,
+    val order_number: String? = null, // رقم العملية
     val receipt_image_url: String? = null,
     val notes: String? = null,
-    val status: String = "pending",
+    val status: String = "pending", // pending, approved, rejected
     val created_at: String? = null
 )
 

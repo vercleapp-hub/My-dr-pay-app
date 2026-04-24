@@ -21,7 +21,8 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
 
     LaunchedEffect(Unit) {
         visible = true
-        delay(2500) // عرض اللوجو لمدة ثانيتين ونصف
+        // تقليل وقت التأخير لتسريع البدء وجعل التجربة أسلس
+        delay(1200)
         onSplashFinished()
     }
 

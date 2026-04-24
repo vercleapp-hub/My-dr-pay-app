@@ -2,49 +2,89 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ELDoctor Pay - بوابة الويب</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ELDoctor Pay | منظومة الدفع الذكي</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #FF5722; --dark: #121212; --card: #1e1e1e; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--dark); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .navbar { width: 100%; padding: 20px; background: var(--card); text-align: center; border-bottom: 2px solid var(--primary); }
-        .container { max-width: 500px; width: 90%; margin-top: 50px; background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h1 { color: var(--primary); }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #252525; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { opacity: 0.8; }
-        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 15px; background: #4CAF50; font-size: 0.8rem; margin-top: 10px; }
-        .apk-download { margin-top: 20px; color: #bbb; text-decoration: none; display: block; font-size: 0.9rem; }
-        #dashboard { display: none; }
+        :root { --primary: #FF5722; --dark: #0a0a0a; --card: #161616; --text: #e0e0e0; --success: #4CAF50; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--dark); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+        .navbar { width: 100%; padding: 15px; background: var(--card); text-align: center; border-bottom: 2px solid var(--primary); }
+        .navbar img { width: 65px; margin-bottom: 5px; }
+
+        .container { max-width: 500px; width: 92%; margin: 20px 0; background: var(--card); padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); border: 1px solid #222; }
+        h1, h2 { color: #fff; text-align: center; margin-bottom: 20px; font-size: 1.4rem; }
+
+        .form-group { margin-bottom: 15px; }
+        input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; background: #1f1f1f; color: white; font-size: 0.95rem; }
+        input:focus { border-color: var(--primary); outline: none; }
+
+        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
+
+        .step-hidden { display: none; }
+        .info-msg { background: rgba(255,87,34,0.1); border-right: 4px solid var(--primary); padding: 12px; font-size: 0.8rem; margin-bottom: 15px; color: #ffab91; }
+
+        .tracking-label { font-size: 0.7rem; color: #555; text-align: center; margin-top: 10px; }
+        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
+
+    <div id="loading-overlay">
+        <div style="border: 3px solid #333; border-top-color: var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top: 15px;">جاري تأمين الطلب وتشفير البيانات...</p>
+    </div>
+
     <div class="navbar">
-        <img src="logo/logo.png" alt="Logo" style="width: 80px;">
-        <div style="font-weight: bold; margin-top: 10px;">الـدكتور باي - النسخة السحابية</div>
+        <img src="logo/logo.png" alt="Logo">
+        <div style="font-size: 0.9rem; color: var(--primary); font-weight: bold;">ELDoctor Pay</div>
     </div>
 
-    <!-- شاشة تسجيل الدخول -->
-    <div id="login-form" class="container">
+    <!-- Login -->
+    <div id="login-section" class="container">
         <h1>تسجيل الدخول</h1>
-        <p>ادخل رقم الهاتف المسجل في التطبيق</p>
-        <input type="text" id="phone" placeholder="رقم الهاتف (بدون 0)">
-        <input type="password" id="password" placeholder="كلمة المرور">
-        <button onclick="login()">دخول للنظام</button>
-        <div id="error" style="color: red; margin-top: 10px; font-size: 0.8rem;"></div>
-        <a href="#" class="apk-download">📥 تحميل تطبيق الأندرويد (APK)</a>
+        <input type="text" id="login-phone" placeholder="رقم الهاتف">
+        <input type="password" id="login-pass" placeholder="كلمة المرور">
+        <button onclick="handleLogin()">دخول آمن</button>
+        <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888;" onclick="toggleAuth(true)">مستخدم جديد؟ <b style="color: var(--primary);">إنشاء حساب</b></div>
     </div>
 
-    <!-- لوحة التحكم المصغرة للويب -->
-    <div id="dashboard" class="container">
-        <h1 id="user-name">مرحباً</h1>
-        <div class="status-badge">حساب نشط ✅</div>
-        <div style="margin: 20px 0; background: #252525; padding: 20px; border-radius: 10px;">
-            <div style="font-size: 0.9rem; color: #aaa;">الرصيد الحالي</div>
-            <div id="balance" style="font-size: 2.5rem; font-weight: bold; color: var(--primary);">0.00 EGP</div>
+    <!-- Signup -->
+    <div id="signup-section" class="container" style="display: none;">
+        <h1>إنشاء حساب تاجر</h1>
+
+        <div id="step-1">
+            <div class="info-msg">المرحلة 1: التحقق من الهوية الوطنية</div>
+            <input type="text" id="reg-national-id" placeholder="الرقم القومي (14 رقم)" maxlength="14" oninput="autoExtractNID()">
+            <input type="text" id="reg-phone" placeholder="رقم الهاتف">
+            <div id="nid-hint" style="font-size: 0.75rem; color: var(--success); margin: 5px 0 10px;"></div>
+            <button onclick="checkEligibility()">التحقق والمتابعة</button>
         </div>
-        <button onclick="logout()" style="background: #333;">تسجيل الخروج</button>
+
+        <div id="step-2" class="step-hidden">
+            <div class="info-msg">المرحلة 2: استكمال البيانات وتوثيق الجهاز</div>
+            <input type="text" id="reg-fullname" placeholder="الاسم الكامل كما في البطاقة">
+            <input type="text" id="reg-province" placeholder="المحافظة" readonly>
+            <input type="text" id="reg-address" placeholder="العنوان (المركز / القرية)">
+            <input type="password" id="reg-pass" placeholder="كلمة المرور">
+            <input type="password" id="reg-confirm" placeholder="تأكيد كلمة المرور">
+
+            <p style="font-size: 0.8rem; margin: 15px 0 5px; color: #888;">📷 صور الهوية (رابط الصورة):</p>
+            <input type="text" id="img-front" placeholder="رابط صورة البطاقة (الوجه)">
+            <input type="text" id="img-back" placeholder="رابط صورة البطاقة (الظهر)">
+
+            <button onclick="completeSignup()">تقديم طلب الانضمام</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888;" onclick="toggleAuth(false)">لديك حساب؟ <b style="color: var(--primary);">دخول</b></div>
+    </div>
+
+    <div id="status-section" class="container" style="display: none; text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 15px;">⏳</div>
+        <h2>طلبك قيد المراجعة</h2>
+        <p style="color: #888; font-size: 0.9rem;">شكراً لانضمامك. فريق الإدارة يقوم بمراجعة بياناتك وصور الهوية الآن. سيتم تفعيل حسابك فور التأكد.</p>
+        <button onclick="location.reload()" style="background: #333;">العودة</button>
     </div>
 
     <script>
@@ -52,40 +92,104 @@
         const supabaseKey = 'sb_publishable_QcDiCoyD921ZNJ-pBd_KKw_LgQzeIpU';
         const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
 
-        async function login() {
-            const phone = document.getElementById('phone').value;
-            const password = document.getElementById('password').value;
-            const email = `u${phone}@drpay.app`;
+        const govMap = {"01":"القاهرة","02":"الإسكندرية","03":"بورسعيد","04":"السويس","11":"دمياط","12":"الدقهلية","13":"الشرقية","14":"القليوبية","15":"كفر الشيخ","16":"الغربية","17":"المنوفية","18":"البحيرة","19":"الإسماعيلية","21":"الجيزة","22":"بني سويف","23":"الفيوم","24":"المنيا","25":"أسيوط","26":"سوهاج","27":"قنا","28":"أسوان","29":"الأقصر","31":"البحر الأحمر","32":"الوادي الجديد","33":"مطروح","34":"شمال سيناء","35":"جنوب سيناء"};
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        function toggleAuth(s) {
+            document.getElementById('login-section').style.display = s ? 'none' : 'block';
+            document.getElementById('signup-section').style.display = s ? 'block' : 'none';
+        }
 
-            if (error) {
-                document.getElementById('error').innerText = "خطأ في بيانات الدخول";
-            } else {
-                showDashboard(data.user);
+        function autoExtractNID() {
+            const nid = document.getElementById('reg-national-id').value;
+            if (nid.length >= 9) {
+                const gov = govMap[nid.substring(7, 9)] || "غير معروف";
+                document.getElementById('reg-province').value = gov;
+                document.getElementById('nid-hint').innerText = "📍 المحافظة: " + gov;
             }
         }
 
-        async function showDashboard(user) {
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
+        async function getTracking() {
+            const loader = document.getElementById('loading-overlay');
+            loader.style.display = 'flex';
+            try {
+                const ipReq = await fetch('https://api.ipify.org?format=json').then(r => r.json());
+                const pos = await new Promise(r => navigator.geolocation.getCurrentPosition(r, () => r({coords:{latitude:0,longitude:0}})));
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
+                return {
+                    last_ip_public: ipReq.ip,
+                    network_ip: ipReq.ip, // في الويب الـ IP العام هو المتاح
+                    os_name: navigator.platform,
+                    device_model: navigator.userAgent.split('(')[1]?.split(')')[0] || 'Unknown',
+                    browser_name: navigator.userAgent,
+                    language: navigator.language,
+                    connection_type: navigator.connection?.effectiveType || 'Unknown',
+                    download_speed: navigator.connection?.downlink + " Mbps",
+                    cpu_cores: navigator.hardwareConcurrency || 0,
+                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                    color_depth: window.screen.colorDepth,
+                    location_lat: pos.coords.latitude,
+                    location_lng: pos.coords.longitude,
+                    location_accuracy: pos.coords.accuracy || 0,
+                    device_fingerprint: btoa(navigator.userAgent + window.screen.width),
+                    browser_fingerprint: btoa(navigator.language + window.screen.colorDepth)
+                };
+            } finally { loader.style.display = 'none'; }
+        }
 
-            if (profile) {
-                document.getElementById('user-name').innerText = `مرحباً، ${profile.full_name}`;
-                document.getElementById('balance').innerText = `${profile.balance} EGP`;
+        async function checkEligibility() {
+            const phone = document.getElementById('reg-phone').value.trim();
+            const nid = document.getElementById('reg-national-id').value.trim();
+            if (phone.length < 10 || nid.length !== 14) { alert("⚠️ بيانات غير صحيحة"); return; }
+
+            const { data } = await supabase.from('profiles').select('id').or(`phone_number.eq.${phone},national_id.eq.${nid}`);
+            if (data?.length > 0) { alert("❌ هذا المستخدم مسجل مسبقاً"); }
+            else {
+                document.getElementById('step-1').style.display = 'none';
+                document.getElementById('step-2').classList.remove('step-hidden');
             }
         }
 
-        function logout() {
-            supabase.auth.signOut();
-            location.reload();
+        async function completeSignup() {
+            const pass = document.getElementById('reg-pass').value;
+            if (pass !== document.getElementById('reg-confirm').value) { alert("❌ كلمة المرور غير متطابقة"); return; }
+
+            const tracking = await getTracking();
+            const phone = document.getElementById('reg-phone').value.trim();
+
+            const { data: auth, error: aErr } = await supabase.auth.signUp({ email: `${phone}@drpay.app`, password: pass });
+            if (aErr) { alert(aErr.message); return; }
+
+            const { error: pErr } = await supabase.from('profiles').insert([{
+                id: auth.user.id,
+                full_name: document.getElementById('reg-fullname').value,
+                phone_number: phone,
+                national_id: document.getElementById('reg-national-id').value,
+                province: document.getElementById('reg-province').value,
+                address: document.getElementById('reg-address').value,
+                id_card_front_url: document.getElementById('img-front').value,
+                id_card_back_url: document.getElementById('img-back').value,
+                is_active: false,
+                ...tracking
+            }]);
+
+            if (!pErr) {
+                document.getElementById('signup-section').style.display = 'none';
+                document.getElementById('status-section').style.display = 'block';
+            } else { alert("Error: " + pErr.message); }
+        }
+
+        async function handleLogin() {
+            const phone = document.getElementById('login-phone').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const { data, error } = await supabase.auth.signInWithPassword({ email: `${phone}@drpay.app`, password: pass });
+
+            if (error) { alert("❌ خطأ في بيانات الدخول"); return; }
+
+            const { data: prof } = await supabase.from('profiles').select('is_active, full_name').eq('id', data.user.id).single();
+            if (prof?.is_active) { alert("✅ أهلاً بك " + prof.full_name); }
+            else { alert("🔒 حسابك بانتظار موافقة الإدارة"); await supabase.auth.signOut(); }
         }
     </script>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 </body>
 </html>

@@ -10,7 +10,7 @@ class DepositRepository {
 
     suspend fun getDeposits(userId: String): List<DepositRequest> = withContext(Dispatchers.IO) {
         try {
-            supabase.postgrest.from("deposits").select {
+            supabase.postgrest.from("deposit_requests").select {
                 filter {
                     eq("user_id", userId)
                 }
@@ -22,7 +22,7 @@ class DepositRepository {
 
     suspend fun createDeposit(deposit: DepositRequest): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            supabase.postgrest.from("deposits").insert(deposit)
+            supabase.postgrest.from("deposit_requests").insert(deposit)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
