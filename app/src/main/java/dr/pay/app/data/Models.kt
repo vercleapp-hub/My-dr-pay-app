@@ -1,6 +1,7 @@
 package dr.pay.app.data
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class User(
@@ -14,8 +15,9 @@ data class User(
     val status: String = "pending", // pending, active, suspended, blocked
     val role_id: Int = 2, // 1: admin, 2: merchant, 3: subuser
     val parent_id: String? = null,
-    val device_info: String? = null, // JSON string
-    val created_at: String? = null
+    val device_info: JsonElement? = null,
+    val created_at: String? = null,
+    val updated_at: String? = null
 )
 
 @Serializable
@@ -26,7 +28,8 @@ data class ServiceItem(
     val category: String? = null,
     val icon: String? = null,
     val active: Boolean = true,
-    val api_service_code: String? = null
+    val api_service_code: String? = null,
+    val created_at: String? = null
 )
 
 @Serializable
