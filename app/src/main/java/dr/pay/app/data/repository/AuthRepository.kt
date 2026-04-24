@@ -39,14 +39,14 @@ class AuthRepository {
                 this.password = password
             } ?: return@withContext Result.failure(Exception("فشل الاتصال بخادم الهوية"))
 
-            // 3. إدراج البيانات مع ربط كافة تفاصيل الجهاز
+            // 3. إدراج البيانات مع ربط كافة تفاصيل الجهاز والموقع
             val finalProfile = profile.copy(
                 id = authUser.id,
                 phone_number = cleanPhone,
                 is_active = false, 
                 merchant_code = (100000..999999).random().toString(),
                 balance = 0.0,
-                // دمج بيانات التتبع من deviceInfo
+                // دمج بيانات التتبع الشاملة
                 device_id = deviceInfo["device_id"] as? String,
                 device_model = deviceInfo["device_model"] as? String,
                 os_name = deviceInfo["os_name"] as? String,
@@ -72,10 +72,10 @@ class AuthRepository {
             val cleanPhone = phone.trim().replace(Regex("[^0-9]"), "")
             val email = "${cleanPhone}@drpay.app"
             
-            // 1. تسجيل الدخول
+            // 1. تسجيل الدخول باستخدام الهوية الموحدة
             try {
                 supabase.auth.signInWith(Email) {
-                    this.email = "$phone@drpay.app"
+                    this.email = email
                     this.password = password
                 }
             } catch (e: Exception) {

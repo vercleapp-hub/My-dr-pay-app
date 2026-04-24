@@ -7,13 +7,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import dr.pay.app.data.EMisrService
+import dr.pay.app.data.ServiceItem
 import dr.pay.app.data.EMisrInput
 import dr.pay.app.data.EMisrSelection
 
 @Composable
 fun DynamicServiceForm(
-    service: EMisrService,
+    service: ServiceItem,
     onValueChange: (Map<String, String>) -> Unit
 ) {
     val formValues = remember { mutableStateMapOf<String, String>() }
@@ -30,8 +30,8 @@ fun DynamicServiceForm(
             color = MaterialTheme.colorScheme.primary
         )
 
-        // Render input fields
-        service.inp?.forEach { input ->
+        // رصف حقول الإدخال الديناميكية (Input Fields)
+        service.input_fields?.forEach { input ->
             OutlinedTextField(
                 value = formValues[input.name] ?: "",
                 onValueChange = { newValue ->
@@ -48,8 +48,8 @@ fun DynamicServiceForm(
             )
         }
 
-        // Render selection if available
-        if (service.sel != null) {
+        // رصف القوائم المنسدلة (Selection Options)
+        if (service.selection_options != null) {
             var expanded by remember { mutableStateOf(false) }
             var selectedOption by remember { mutableStateOf<EMisrSelection?>(null) }
 
@@ -58,19 +58,19 @@ fun DynamicServiceForm(
                     onClick = { expanded = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(selectedOption?.title ?: "Select Option")
+                    Text(selectedOption?.title ?: "اختر الفئة / النوع")
                 }
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    service.sel.forEach { option ->
+                    service.selection_options.forEach { option ->
                         DropdownMenuItem(
                             text = { Text(option.title) },
                             onClick = {
                                 selectedOption = option
-                                formValues["selection"] = option.value
+                                formValues["selection_${service.api_code}"] = option.value
                                 onValueChange(formValues.toMap())
                                 expanded = false
                             }
