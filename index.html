@@ -3,288 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ELDoctor Pay | منظومة الدفع الذكي</title>
+    <title>ELDoctor Pay | منظومة الدفع والتحكم</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #FF5722; --dark: #0a0a0a; --card: #161616; --text: #e0e0e0; --success: #4CAF50; --error: #f44336; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--dark); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .navbar { width: 100%; padding: 15px; background: var(--card); text-align: center; border-bottom: 2px solid var(--primary); }
-        .navbar img { width: 65px; margin-bottom: 5px; }
-        .container { max-width: 500px; width: 92%; margin: 20px 0; background: var(--card); padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); border: 1px solid #222; }
-        h1, h2 { color: #fff; text-align: center; margin-bottom: 20px; font-size: 1.4rem; }
-        .form-group { margin-bottom: 15px; }
-        input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; background: #1f1f1f; color: white; font-size: 0.95rem; }
-        input:focus { border-color: var(--primary); outline: none; }
-        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
-        button:disabled { background: #555; }
-        .step-hidden { display: none; }
-        .info-msg { background: rgba(255,87,34,0.1); border-right: 4px solid var(--primary); padding: 12px; font-size: 0.8rem; margin-bottom: 15px; color: #ffab91; }
-        .error-text { color: var(--error); font-size: 0.85rem; text-align: center; margin-top: 10px; display: none; }
-        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; flex-direction: column; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--dark); color: var(--text); margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        .navbar { width: 100%; padding: 15px; background: var(--card); text-align: center; border-bottom: 2px solid var(--primary); position: sticky; top: 0; z-index: 100; }
+        .navbar img { width: 50px; }
+        .container { max-width: 450px; width: 92%; margin: 20px 0; background: var(--card); padding: 30px; border-radius: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); border: 1px solid #222; }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 25px; color: #fff; }
+        .form-group { margin-bottom: 15px; position: relative; }
+        input { width: 100%; padding: 15px; border-radius: 15px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 1rem; transition: 0.3s; }
+        input:focus { border-color: var(--primary); outline: none; background: #222; }
+        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 1.1rem; transition: 0.3s; margin-top: 10px; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        .error-box { background: rgba(244,67,54,0.15); border-right: 4px solid var(--error); color: #ff8a80; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; font-size: 0.9rem; line-height: 1.4; }
+        .status-badge { font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; margin-top: 8px; display: inline-block; }
+        .status-online { background: rgba(76,175,80,0.1); color: var(--success); }
+        .status-offline { background: rgba(244,67,54,0.1); color: var(--error); }
+        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .tab-btn { background: #333; margin: 5px; width: auto; padding: 10px 20px; font-size: 0.85rem; }
+        .tab-active { background: var(--primary); }
     </style>
 </head>
 <body>
+
     <div id="loading-overlay">
-        <div style="border: 3px solid #333; border-top-color: var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
-        <p style="margin-top: 15px;">جاري معالجة البيانات...</p>
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; font-weight: 200;">جاري الاتصال بالسحابة...</p>
     </div>
 
     <div class="navbar">
         <img src="logo/logo.png" alt="Logo">
-        <div style="font-size: 0.9rem; color: var(--primary); font-weight: bold;">ELDoctor Pay</div>
+        <div style="font-weight: bold; font-size: 1.1rem;">ELDoctor <span style="color: var(--primary);">Pay</span></div>
+        <div id="db-indicator" class="status-badge status-offline">جاري فحص الاتصال...</div>
     </div>
 
-    <!-- تسجيل الدخول -->
+    <!-- واجهة تسجيل الدخول -->
     <div id="login-section" class="container">
-        <h1>تسجيل الدخول</h1>
+        <h1>دخول آمن</h1>
         <div class="form-group">
-            <input type="text" id="login-phone" placeholder="رقم الهاتف">
+            <input type="tel" id="login-phone" placeholder="رقم الهاتف (11 رقم)">
         </div>
         <div class="form-group">
             <input type="password" id="login-pass" placeholder="كلمة المرور">
         </div>
-        <button id="btn-login" onclick="handleLogin()">دخول آمن</button>
-        <div id="login-error" class="error-text"></div>
-        <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888;" onclick="toggleAuth(true)">مستخدم جديد؟ <b style="color: var(--primary); cursor:pointer;">إنشاء حساب</b></div>
+        <button id="btn-login" onclick="handleLogin()">دخول للمنظومة</button>
+
+        <div id="login-error" class="error-box"></div>
+
+        <div style="text-align: center; margin-top: 25px; font-size: 0.9rem; color: #888;">
+            ليس لديك حساب؟ <span style="color: var(--primary); cursor:pointer; font-weight: bold;" onclick="showSignup()">أنشئ حسابك الآن</span>
+        </div>
     </div>
 
-    <!-- إنشاء حساب -->
+    <!-- واجهة إنشاء الحساب -->
     <div id="signup-section" class="container" style="display: none;">
-        <h1>إنشاء حساب تاجر</h1>
+        <h1>انضمام كتاجر جديد</h1>
         <div id="step-1">
-            <div class="info-msg">المرحلة 1: التحقق من الهوية</div>
-            <input type="text" id="reg-national-id" placeholder="الرقم القومي (14 رقم)" maxlength="14" oninput="autoExtractNID()">
-            <input type="text" id="reg-phone" placeholder="رقم الهاتف" style="margin-top:10px;">
-            <div id="nid-hint" style="font-size: 0.75rem; color: var(--success); margin: 5px 0 10px;"></div>
-            <button onclick="checkEligibility()">التحقق والمتابعة</button>
+            <input type="text" id="reg-nid" placeholder="الرقم القومي (14 رقم)" maxlength="14">
+            <input type="tel" id="reg-phone" placeholder="رقم الهاتف" style="margin-top: 15px;">
+            <button onclick="checkEligibility()" style="margin-top: 20px;">التحقق والمتابعة</button>
         </div>
-
-        <div id="step-2" class="step-hidden">
-            <div class="info-msg">المرحلة 2: استكمال البيانات</div>
-            <input type="text" id="reg-fullname" placeholder="الاسم الكامل كما في البطاقة">
-            <input type="text" id="reg-province" placeholder="المحافظة" readonly style="margin-top:10px;">
-            <input type="text" id="reg-address" placeholder="العنوان بالتفصيل" style="margin-top:10px;">
-            <input type="password" id="reg-pass" placeholder="كلمة المرور" style="margin-top:10px;">
-            <input type="password" id="reg-confirm" placeholder="تأكيد كلمة المرور" style="margin-top:10px;">
-
-            <p style="font-size: 0.8rem; margin: 15px 0 5px; color: #888;">📷 صور الهوية:</p>
-            <input type="text" id="img-front" placeholder="رابط صورة الوجه">
-            <input type="text" id="img-back" placeholder="رابط صورة الظهر" style="margin-top:10px;">
-
-            <button onclick="completeSignup()">تقديم طلب الانضمام</button>
+        <div id="signup-error" class="error-box"></div>
+        <div style="text-align: center; margin-top: 25px; font-size: 0.9rem; color: #888;" onclick="showLogin()">
+            لديك حساب بالفعل؟ <span style="color: var(--primary); cursor:pointer; font-weight: bold;">تسجيل الدخول</span>
         </div>
-        <div id="reg-error" class="error-text"></div>
-        <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888;" onclick="toggleAuth(false)">لديك حساب؟ <b style="color: var(--primary); cursor:pointer;">دخول</b></div>
-    </div>
-
-    <div id="status-section" class="container" style="display: none; text-align: center;">
-        <div style="font-size: 3rem; margin-bottom: 15px;">⏳</div>
-        <h2>طلبك قيد المراجعة</h2>
-        <p style="color: #888; font-size: 0.9rem;">شكراً لانضمامك. يتم مراجعة بياناتك الآن وسيتم تفعيل الحساب خلال 24 ساعة.</p>
-        <button onclick="location.reload()" style="background: #333;">العودة</button>
-    </div>
-
-    <!-- لوحة تحكم المسؤول -->
-    <div id="admin-section" class="container" style="display: none; max-width: 800px;">
-        <h1 style="color: var(--primary);">لوحة تحكم الإدارة</h1>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-            <div style="background: #222; padding: 15px; border-radius: 12px; text-align: center;">
-                <div id="count-total" style="font-size: 1.5rem; font-weight: bold;">0</div>
-                <div style="font-size: 0.8rem; color: #888;">إجمالي التجار</div>
-            </div>
-            <div style="background: #222; padding: 15px; border-radius: 12px; text-align: center;">
-                <div id="count-pending" style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">0</div>
-                <div style="font-size: 0.8rem; color: #888;">طلبات انتظار</div>
-            </div>
-        </div>
-
-        <h2>طلبات التفعيل الجديدة</h2>
-        <div id="merchants-list" style="max-height: 400px; overflow-y: auto;">
-            <!-- سيتم تحميل التجار هنا -->
-            <p style="text-align: center; color: #666;">جاري جلب البيانات...</p>
-        </div>
-        <button onclick="location.reload()" style="background: #333; margin-top: 20px;">تسجيل الخروج</button>
     </div>
 
     <script>
+        const { createClient } = supabase;
         const supabaseUrl = 'https://wwkllpornhzwovsvyikv.supabase.co';
         const supabaseKey = 'sb_publishable_QcDiCoyD921ZNJ-pBd_KKw_LgQzeIpU';
-        const supabase = supabasejs.createClient(supabaseUrl, supabaseKey);
+        const client = createClient(supabaseUrl, supabaseKey);
 
-        const govMap = {"01":"القاهرة","02":"الإسكندرية","03":"بورسعيد","04":"السويس","11":"دمياط","12":"الدقهلية","13":"الشرقية","14":"القليوبية","15":"كفر الشيخ","16":"الغربية","17":"المنوفية","18":"البحيرة","19":"الإسماعيلية","21":"الجيزة","22":"بني سويف","23":"الفيوم","24":"المنيا","25":"أسيوط","26":"سوهاج","27":"قنا","28":"أسوان","29":"الأقصر","31":"البحر الأحمر","32":"الوادي الجديد","33":"مطروح","34":"شمال سيناء","35":"جنوب سيناء"};
-
-        function toggleAuth(s) {
-            document.getElementById('login-section').style.display = s ? 'none' : 'block';
-            document.getElementById('signup-section').style.display = s ? 'block' : 'none';
-            document.querySelectorAll('.error-text').forEach(e => e.style.display = 'none');
-        }
-
-        function autoExtractNID() {
-            const nid = document.getElementById('reg-national-id').value;
-            if (nid.length >= 9) {
-                const gov = govMap[nid.substring(7, 9)] || "غير معروف";
-                document.getElementById('reg-province').value = gov;
-                document.getElementById('nid-hint').innerText = "📍 المحافظة: " + gov;
+        // 1. فحص الاتصال التلقائي وتصحيح الحالة
+        async function initSystem() {
+            const indicator = document.getElementById('db-indicator');
+            try {
+                const { data, error } = await client.from('profiles').select('count', { count: 'exact', head: true });
+                if (error && error.code !== 'PGRST116') throw error;
+                indicator.innerText = "🟢 السيرفر متصل";
+                indicator.className = "status-badge status-online";
+                console.log("System Ready: Connected to Supabase");
+            } catch (err) {
+                indicator.innerText = "🔴 خطأ في الاتصال";
+                indicator.className = "status-badge status-offline";
+                console.error("Connection Failed:", err.message);
             }
         }
+        initSystem();
 
-        async function getDeviceInfo() {
-            const ipReq = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ip: '0.0.0.0'}));
-            return {
-                last_ip_public: ipReq.ip,
-                device_model: navigator.platform,
-                browser_name: navigator.userAgent,
-                device_fingerprint: btoa(navigator.userAgent + window.screen.width)
-            };
+        function showSignup() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('signup-section').style.display = 'block';
         }
 
-        function showError(id, msg) {
-            const el = document.getElementById(id);
-            el.innerText = "❌ " + msg;
-            el.style.display = 'block';
+        function showLogin() {
+            document.getElementById('signup-section').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
         }
 
         async function handleLogin() {
-            const phoneInput = document.getElementById('login-phone').value.trim().replace(/[^0-9]/g, '');
+            const phone = document.getElementById('login-phone').value.trim();
             const pass = document.getElementById('login-pass').value;
-            const errId = 'login-error';
-            document.getElementById(errId).style.display = 'none';
+            const errorBox = document.getElementById('login-error');
 
-            if (!phoneInput || !pass) { showError(errId, "يرجى إدخال الهاتف وكلمة المرور"); return; }
+            errorBox.style.display = 'none';
+
+            if (!phone || !pass) {
+                errorBox.innerText = "⚠️ يرجى إدخال البيانات المطلوبة كاملة";
+                errorBox.style.display = 'block';
+                return;
+            }
 
             document.getElementById('loading-overlay').style.display = 'flex';
 
-            // تحقق خاص للمسؤول (يمكنك تغييره لاحقاً)
-            if (phoneInput === "01000000000" && pass === "admin123") {
-                showAdminPanel();
-                document.getElementById('loading-overlay').style.display = 'none';
-                return;
-            }
+            try {
+                const cleanPhone = phone.replace(/[^0-9]/g, '');
+                const { data: auth, error: aErr } = await client.auth.signInWithPassword({
+                    email: `${cleanPhone}@drpay.app`,
+                    password: pass
+                });
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email: `${phoneInput}@drpay.app`, password: pass });
-
-            if (error) {
-                document.getElementById('loading-overlay').style.display = 'none';
-                showError(errId, error.message.includes("Invalid login") ? "بيانات الدخول غير صحيحة" : "خطأ في الاتصال بالسيرفر");
-                return;
-            }
-
-            const { data: prof, error: pErr } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
-            const device = await getDeviceInfo();
-
-            if (!prof) {
-                showError(errId, "لم يتم العثور على بروفايل مرتبط بهذا الحساب");
-            } else if (prof.role === 'admin') {
-                showAdminPanel();
-            } else if (!prof.is_active) {
-                showError(errId, "🔒 حسابك بانتظار تفعيل الإدارة");
-                await supabase.auth.signOut();
-            } else if (prof.device_id && prof.device_id !== device.device_fingerprint) {
-                showError(errId, "هذا الحساب مقيد بجهاز آخر. تواصل مع الدعم.");
-                await supabase.auth.signOut();
-            } else {
-                alert("✅ أهلاً بك " + prof.full_name);
-                if (!prof.device_id) {
-                    await supabase.from('profiles').update({ device_id: device.device_fingerprint }).eq('id', prof.id);
+                if (aErr) {
+                    let msg = "خطأ في الدخول";
+                    if (aErr.message.includes("Invalid login")) msg = "عذراً، رقم الهاتف أو كلمة المرور غير صحيحة";
+                    else if (aErr.message.includes("network")) msg = "تأكد من اتصالك بالإنترنت وحاول مجدداً";
+                    throw new Error(msg);
                 }
-                // توجيه لصفحة التاجر (يمكن إضافتها لاحقاً)
-            }
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
 
-        async function showAdminPanel() {
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('admin-section').style.display = 'block';
-            loadMerchants();
-        }
+                // جلب البروفايل للتحقق من الحالة
+                const { data: prof, error: pErr } = await client.from('profiles').select('*').eq('id', auth.user.id).single();
 
-        async function loadMerchants() {
-            const { data: all } = await supabase.from('profiles').select('id');
-            const { data: pending } = await supabase.from('profiles').select('*').eq('is_active', false);
+                if (pErr || !prof) throw new Error("لم يتم العثور على بروفايل مرتبط. تواصل مع الإدارة.");
 
-            document.getElementById('count-total').innerText = all?.length || 0;
-            document.getElementById('count-pending').innerText = pending?.length || 0;
+                if (!prof.is_active && prof.role !== 'admin') {
+                    await client.auth.signOut();
+                    throw new Error("🔒 حسابك قيد المراجعة. سيتم إرسال رسالة تفعيل قريباً.");
+                }
 
-            const list = document.getElementById('merchants-list');
-            list.innerHTML = '';
+                alert("✅ تم تسجيل الدخول بنجاح! أهلاً بك " + prof.full_name);
+                // توجيه للوحة التحكم
+                if(prof.role === 'admin') location.reload();
 
-            if (!pending || pending.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">لا توجد طلبات معلقة حالياً</p>';
-                return;
-            }
-
-            pending.forEach(m => {
-                const item = document.createElement('div');
-                item.style = "background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-right: 4px solid var(--primary);";
-                item.innerHTML = `
-                    <div style="font-weight: bold; margin-bottom: 5px;">${m.full_name}</div>
-                    <div style="font-size: 0.8rem; color: #aaa;">📞 ${m.phone_number} | 📍 ${m.province}</div>
-                    <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;">🪪 الرقم القومي: ${m.national_id}</div>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button onclick="activateMerchant('${m.id}')" style="padding: 8px; font-size: 0.8rem; background: var(--success);">تفعيل الحساب</button>
-                        <button onclick="window.open('${m.id_card_front_url}')" style="padding: 8px; font-size: 0.8rem; background: #444;">صورة الهوية</button>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        async function activateMerchant(id) {
-            if (!confirm("هل أنت متأكد من تفعيل هذا التاجر؟")) return;
-            const { error } = await supabase.from('profiles').update({ is_active: true }).eq('id', id);
-            if (!error) {
-                alert("تم تفعيل التاجر بنجاح!");
-                loadMerchants();
-            } else {
-                alert("خطأ أثناء التفعيل: " + error.message);
+            } catch (err) {
+                errorBox.innerText = "⚠️ " + err.message;
+                errorBox.style.display = 'block';
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
             }
         }
 
         async function checkEligibility() {
-            const phone = document.getElementById('reg-phone').value.trim().replace(/[^0-9]/g, '');
-            const nid = document.getElementById('reg-national-id').value.trim();
-            if (phone.length < 10 || nid.length !== 14) { showError('reg-error', "بيانات الهوية أو الهاتف غير صحيحة"); return; }
+            const nid = document.getElementById('reg-nid').value;
+            const phone = document.getElementById('reg-phone').value;
+            const errorBox = document.getElementById('signup-error');
+            errorBox.style.display = 'none';
 
-            const { data } = await supabase.from('profiles').select('id').or(`phone_number.eq.${phone},national_id.eq.${nid}`);
-            if (data?.length > 0) { showError('reg-error', "عذراً، هذا الرقم القومي أو الهاتف مسجل مسبقاً"); }
-            else {
-                document.getElementById('step-1').style.display = 'none';
-                document.getElementById('step-2').classList.remove('step-hidden');
+            if (nid.length !== 14 || phone.length < 11) {
+                errorBox.innerText = "⚠️ يرجى التأكد من كتابة الرقم القومي (14 رقم) والهاتف بشكل صحيح";
+                errorBox.style.display = 'block';
+                return;
             }
-        }
 
-        async function completeSignup() {
-            const pass = document.getElementById('reg-pass').value;
-            if (pass !== document.getElementById('reg-confirm').value) { showError('reg-error', "كلمات المرور غير متطابقة"); return; }
-            if (pass.length < 6) { showError('reg-error', "كلمة المرور يجب أن تكون 6 رموز على الأقل"); return; }
-
-            document.getElementById('loading-overlay').style.display = 'flex';
-            const phone = document.getElementById('reg-phone').value.trim().replace(/[^0-9]/g, '');
-            const device = await getDeviceInfo();
-
-            const { data: auth, error: aErr } = await supabase.auth.signUp({ email: `${phone}@drpay.app`, password: pass });
-            if (aErr) { showError('reg-error', "فشل إنشاء الحساب: " + aErr.message); document.getElementById('loading-overlay').style.display = 'none'; return; }
-
-            const { error: pErr } = await supabase.from('profiles').insert([{
-                id: auth.user.id,
-                full_name: document.getElementById('reg-fullname').value,
-                phone_number: phone,
-                national_id: document.getElementById('reg-national-id').value,
-                province: document.getElementById('reg-province').value,
-                address: document.getElementById('reg-address').value,
-                id_card_front_url: document.getElementById('img-front').value,
-                id_card_back_url: document.getElementById('img-back').value,
-                is_active: false,
-                ...device
-            }]);
-
-            document.getElementById('loading-overlay').style.display = 'none';
-            if (!pErr) {
-                document.getElementById('signup-section').style.display = 'none';
-                document.getElementById('status-section').style.display = 'block';
-            } else { showError('reg-error', "خطأ في حفظ البيانات: " + pErr.message); }
+            alert("سيتم نقلك لمرحلة استكمال البيانات...");
         }
     </script>
 </body>
