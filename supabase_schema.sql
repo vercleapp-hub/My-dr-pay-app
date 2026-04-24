@@ -274,5 +274,5 @@ INSERT INTO deposits (user_id, amount, method, status) VALUES
 
 -- Insert sample complaint
 INSERT INTO complaints (user_id, subject, message, status) VALUES
-('550e8400-e29b-41d4-a716-446655440001', 'Test Complaint', 'This is a test complaint', 'open');</content>
+('550e8400-e29b-41d4-a716-446655440001', 'Test Complaint', 'This is a test complaint', 'open');
 <parameter name="filePath">c:\Users\First\cod\e-dr pay\supabase_schema.sql
