@@ -1,0 +1,38 @@
+# Android
+*.apk
+*.aar
+*.o
+*.so
+.gradle/
+build/
+.idea/
+*.iml
+local.properties
+
+# Supabase
+.supabase/
+.branches/
+.temp/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.production
